@@ -5,31 +5,48 @@ use godot::{
     obj::{Gd, NewAlloc},
 };
 
-use crate::view::{AnchorType, View};
-
-pub struct AnyViewState {
-    anchor: Gd<Node>,
-    inner: Box<dyn Any>,
-}
+use crate::{
+    ctx::Context,
+    view::{AnchorType, View, ViewId},
+};
 
 pub trait AnyView {
     fn as_any(&self) -> &dyn Any;
-    fn dyn_build(&self, anchor: &mut Node, anchor_type: AnchorType) -> AnyViewState;
+    fn dyn_build(
+        &self,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) -> AnyViewState;
     fn dyn_rebuild(
         &self,
         prev: &dyn AnyView,
         state: &mut AnyViewState,
+        ctx: &mut Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
     );
-    fn dyn_teardown(&self, state: &mut AnyViewState, anchor: &mut Node, anchor_type: AnchorType);
-    // fn dyn_message(
-    //     &self,
-    //     msg: Message,
-    //     path: &[ViewID],
-    //     view_state: &mut AnyViewState,
-    // ) -> MessageResult;
-    // fn collect_nodes(&self, state: &AnyViewState, nodes: &mut Vec<Gd<Node>>);
+    fn dyn_teardown(
+        &self,
+        state: &mut AnyViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    );
+    fn dyn_notify_state(
+        &self,
+        path: &[ViewId],
+        state: &mut AnyViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    );
+}
+
+pub struct AnyViewState {
+    anchor: Gd<Node>,
+    inner: Box<dyn Any>,
+    id: ViewId,
 }
 
 // MARK: AnyView for View
@@ -43,14 +60,23 @@ where
         self
     }
 
-    fn dyn_build(&self, anchor: &mut Node, anchor_type: AnchorType) -> AnyViewState {
+    fn dyn_build(
+        &self,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) -> AnyViewState {
         let mut any_anchor = Node::new_alloc();
         anchor_type.add(anchor, &any_anchor);
+        let inner_id = ctx.new_structural_id();
 
-        let inner = self.build(&mut any_anchor, AnchorType::Before);
+        let inner = ctx.with_id(inner_id, |ctx| {
+            self.build(ctx, &mut any_anchor, AnchorType::Before)
+        });
         AnyViewState {
             anchor: any_anchor,
             inner: Box::new(inner),
+            id: inner_id,
         }
     }
 
@@ -58,6 +84,7 @@ where
         &self,
         prev: &dyn AnyView,
         state: &mut AnyViewState,
+        ctx: &mut Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
     ) {
@@ -68,52 +95,59 @@ where
                 .downcast_mut::<V::ViewState>()
                 .expect("What the hell bro");
 
-            self.rebuild(prev, inner, &mut any_anchor, AnchorType::Before);
+            ctx.with_id(state.id, |ctx| {
+                self.rebuild(prev, inner, ctx, &mut any_anchor, AnchorType::Before);
+            })
         } else {
-            prev.dyn_teardown(state, &mut any_anchor, AnchorType::Before);
-            let inner = self.build(&mut any_anchor, AnchorType::Before);
+            ctx.with_id(state.id, |ctx| {
+                prev.dyn_teardown(state, ctx, &mut any_anchor, AnchorType::Before);
+            });
+            state.id = ctx.new_structural_id();
+            let inner = ctx.with_id(state.id, |ctx| {
+                self.build(ctx, &mut any_anchor, AnchorType::Before)
+            });
             state.inner = Box::new(inner);
         }
     }
 
-    fn dyn_teardown(&self, state: &mut AnyViewState, anchor: &mut Node, anchor_type: AnchorType) {
+    fn dyn_teardown(
+        &self,
+        state: &mut AnyViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
         let inner = state
             .inner
             .downcast_mut::<V::ViewState>()
             .expect("What the hell bro");
         let mut any_anchor = state.anchor.clone();
-        self.teardown(inner, &mut any_anchor, AnchorType::Before);
+        ctx.with_id(state.id, |ctx| {
+            self.teardown(inner, ctx, &mut any_anchor, AnchorType::Before);
+        });
     }
 
-    // fn dyn_message(
-    //     &self,
-    //     msg: Message,
-    //     path: &[ViewID],
-    //     view_state: &mut AnyViewState,
-    //     app_state: &mut State,
-    // ) -> MessageResult {
-    //     let inner = view_state
-    //         .inner
-    //         .downcast_mut::<V::ViewState>()
-    //         .expect("What the hell bro");
-    //     if let Some((start, rest)) = path.split_first() {
-    //         if *start == view_state.id {
-    //             self.message(msg, rest, inner, app_state)
-    //         } else {
-    //             MessageResult::Stale(msg)
-    //         }
-    //     } else {
-    //         MessageResult::Stale(msg)
-    //     }
-    // }
-
-    // fn collect_nodes(&self, state: &AnyViewState, nodes: &mut Vec<Gd<Node>>) {
-    //     let inner = state
-    //         .inner
-    //         .downcast_ref::<V::ViewState>()
-    //         .expect("What the hell bro");
-    //     self.collect_nodes(inner, nodes);
-    // }
+    fn dyn_notify_state(
+        &self,
+        path: &[ViewId],
+        state: &mut AnyViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        let inner = state
+            .inner
+            .downcast_mut::<V::ViewState>()
+            .expect("What the hell bro");
+        let mut any_anchor = state.anchor.clone();
+        if let Some((start, rest)) = path.split_first()
+            && *start == state.id
+        {
+            ctx.with_id(state.id, |ctx| {
+                self.notify_state(rest, inner, ctx, &mut any_anchor, AnchorType::Before)
+            });
+        }
+    }
 }
 
 // MARK: View for dyn AnyView
@@ -125,43 +159,44 @@ macro_rules! dyn_anyview_impl {
 
             fn build(
                 &self,
+                ctx: &mut Context,
                 anchor: &mut Node,
                 anchor_type: AnchorType,
             ) -> Self::ViewState {
-                self.dyn_build(anchor, anchor_type)
+                self.dyn_build(ctx, anchor, anchor_type)
             }
 
             fn rebuild(
                 &self,
                 prev: &Self,
                 state: &mut Self::ViewState,
+                ctx: &mut Context,
                 anchor: &mut Node,
                 anchor_type: AnchorType,
             ) {
-                self.dyn_rebuild(prev, state, anchor, anchor_type);
+                self.dyn_rebuild(prev, state, ctx, anchor, anchor_type);
             }
 
             fn teardown(
                 &self,
                 state: &mut Self::ViewState,
+                ctx: &mut Context,
                 anchor: &mut Node,
                 anchor_type: AnchorType,
             ) {
-                self.dyn_teardown(state, anchor, anchor_type);
+                self.dyn_teardown(state, ctx, anchor, anchor_type);
             }
 
-            // fn message(
-            //     &self,
-            //     msg: Message,
-            //     path: &[ViewID],
-            //     view_state: &mut Self::ViewState,
-            // ) -> MessageResult {
-            //     self.dyn_message(msg, path, view_state)
-            // }
-
-            // fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
-            //     self.collect_nodes(state, nodes);
-            // }
+            fn notify_state(
+                &self,
+                path: &[ViewId],
+                state: &mut Self::ViewState,
+                ctx: &mut Context,
+                anchor: &mut Node,
+                anchor_type: AnchorType,
+            ) {
+                self.dyn_notify_state(path, state, ctx, anchor, anchor_type);
+            }
         }
     };
 }

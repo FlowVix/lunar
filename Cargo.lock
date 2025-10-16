@@ -177,10 +177,23 @@ dependencies = [
  "ahash",
  "either",
  "godot",
+ "lunar_macro",
  "parking_lot",
  "paste",
  "replace_with",
  "slotmap",
+]
+
+[[package]]
+name = "lunar_macro"
+version = "0.1.0"
+dependencies = [
+ "either",
+ "heck",
+ "paste",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

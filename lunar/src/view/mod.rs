@@ -1,10 +1,18 @@
-// pub mod any;
+pub mod any;
+pub mod either;
+pub mod element;
 pub mod option;
-pub mod scoped;
+pub mod stateful;
 
 use godot::{classes::Node, obj::Gd};
 
-use crate::system::ScopeId;
+use crate::ctx::Context;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ViewId {
+    Structural(u64),
+    Key(u64),
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AnchorType {
@@ -36,15 +44,112 @@ pub trait View {
 
     fn build(
         &self,
+        ctx: &mut Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
-    ) -> (Self::ViewState, Option<ScopeId>);
+    ) -> Self::ViewState;
     fn rebuild(
         &self,
         prev: &Self,
         state: &mut Self::ViewState,
+        ctx: &mut Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
-    ) -> Option<ScopeId>;
-    fn teardown(&self, state: &mut Self::ViewState, anchor: &mut Node, anchor_type: AnchorType);
+    );
+    fn teardown(
+        &self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    );
+    fn notify_state(
+        &self,
+        path: &[ViewId],
+        state: &mut Self::ViewState,
+        ctx: &mut crate::ctx::Context,
+        anchor: &mut godot::prelude::Node,
+        anchor_type: AnchorType,
+    );
 }
+
+macro_rules! tuple_impl {
+    ($($v:literal)*) => {
+        paste::paste! {
+            impl<$( [< V $v >] ,)*> View for ($( [< V $v >] ,)*) where $( [< V $v >] : View,)* {
+                type ViewState = ($( ([<V $v>]::ViewState, ViewId), )*);
+
+                #[allow(clippy::unused_unit)]
+                #[allow(unused_variables)]
+                fn build(&self, ctx: &mut Context, anchor: &mut Node, anchor_type: AnchorType) -> Self::ViewState {
+                    (
+                        $(
+                            {
+                                let child_id = ctx.new_structural_id();
+                                (ctx.with_id(child_id, |ctx| {
+                                    self.$v.build(ctx, anchor, anchor_type)
+                                }), child_id)
+                            },
+                        )*
+                    )
+                }
+                #[allow(unused_variables)]
+                fn rebuild(
+                    &self,
+                    prev: &Self,
+                    state: &mut Self::ViewState,
+                    ctx: &mut Context,
+                    anchor: &mut Node,
+                    anchor_type: AnchorType,
+                ) {
+                    $(
+                        ctx.with_id(state.$v.1, |ctx| {
+                            self.$v.rebuild(&prev.$v, &mut state.$v.0, ctx, anchor, anchor_type);
+                        });
+                    )*
+                }
+                #[allow(unused_variables)]
+                fn teardown(&self, state: &mut Self::ViewState, ctx: &mut Context, anchor: &mut Node, anchor_type: AnchorType) {
+                    $(
+                        ctx.with_id(state.$v.1, |ctx| {
+                            self.$v.teardown(&mut state.$v.0, ctx, anchor, anchor_type);
+                        });
+                    )*
+                }
+
+                #[allow(unused_variables)]
+                fn notify_state(
+                    &self,
+                    path: &[ViewId],
+                    state: &mut Self::ViewState,
+                    ctx: &mut crate::ctx::Context,
+                    anchor: &mut godot::prelude::Node,
+                    anchor_type: AnchorType,
+                ) {
+                    if let Some((start, rest)) = path.split_first() {
+                        $(
+                            if *start == state.$v.1 {
+                                ctx.with_id(state.$v.1, |ctx| {
+                                    self.$v.notify_state(rest, &mut state.$v.0, ctx, anchor, anchor_type);
+                                });
+                            }
+                        )*
+                    }
+                }
+            }
+        }
+    };
+}
+
+tuple_impl! {}
+tuple_impl! { 0 }
+tuple_impl! { 0 1 }
+tuple_impl! { 0 1 2 }
+tuple_impl! { 0 1 2 3 }
+tuple_impl! { 0 1 2 3 4 }
+tuple_impl! { 0 1 2 3 4 5 }
+tuple_impl! { 0 1 2 3 4 5 6 }
+tuple_impl! { 0 1 2 3 4 5 6 7 }
+tuple_impl! { 0 1 2 3 4 5 6 7 8 }
+tuple_impl! { 0 1 2 3 4 5 6 7 8 9 }
+tuple_impl! { 0 1 2 3 4 5 6 7 8 9 10 }

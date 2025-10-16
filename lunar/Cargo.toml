@@ -8,7 +8,7 @@ edition = "2024"
 godot = { workspace = true }
 paste = { workspace = true }
 parking_lot = { workspace = true }
-# gdx_macro = { path = "../gdx_macro" }
+lunar_macro = { path = "../lunar_macro" }
 either = { workspace = true }
 replace_with = { workspace = true }
 slotmap = { workspace = true }
