@@ -1,38 +1,40 @@
 use std::marker::PhantomData;
 
-use godot::{builtin::Variant, classes::Node, meta::ToGodot, obj::Inherits, prelude::Gd};
+use godot::{
+    classes::Node,
+    obj::{Gd, Inherits},
+};
 
-use crate::{AnchorType, ElementView, View, view::element::impl_element_view};
+use crate::{ElementView, State, View, view::element::impl_element_view};
 
-pub struct OnBuild<N, Cb, Inner> {
+pub struct NodeRef<N: Inherits<Node>, Inner> {
     pub(crate) inner: Inner,
-    pub(crate) cb: Cb,
-    pub(crate) _p: PhantomData<N>,
+    pub(crate) state: State<Option<Gd<N>>>,
 }
 
-pub struct OnBuildViewState<InnerViewState> {
+pub struct NodeRefViewState<InnerViewState> {
     inner_view_state: InnerViewState,
 }
 
-impl<N, Cb, Inner> View for OnBuild<N, Cb, Inner>
+impl<N, Inner> View for NodeRef<N, Inner>
 where
     Inner: ElementView<N>,
-    Cb: Fn(),
     N: Inherits<Node>,
 {
-    type ViewState = OnBuildViewState<Inner::ViewState>;
+    type ViewState = NodeRefViewState<Inner::ViewState>;
 
     fn build(
         &self,
         ctx: &mut crate::Context,
         anchor: &mut Node,
-        anchor_type: AnchorType,
+        anchor_type: crate::AnchorType,
     ) -> Self::ViewState {
         let inner_view_state = self.inner.build(ctx, anchor, anchor_type);
 
-        (self.cb)();
+        let node = self.inner.get_node(&inner_view_state);
+        self.state.set(Some(node));
 
-        OnBuildViewState { inner_view_state }
+        NodeRefViewState { inner_view_state }
     }
 
     fn rebuild(
@@ -41,7 +43,7 @@ where
         state: &mut Self::ViewState,
         ctx: &mut crate::Context,
         anchor: &mut Node,
-        anchor_type: AnchorType,
+        anchor_type: crate::AnchorType,
     ) {
         self.inner.rebuild(
             &prev.inner,
@@ -57,7 +59,7 @@ where
         state: &mut Self::ViewState,
         ctx: &mut crate::Context,
         anchor: &mut Node,
-        anchor_type: AnchorType,
+        anchor_type: crate::AnchorType,
     ) {
         self.inner
             .teardown(&mut state.inner_view_state, ctx, anchor, anchor_type);
@@ -65,25 +67,24 @@ where
 
     fn notify_state(
         &self,
-        path: &[crate::view::ViewId],
+        path: &[crate::ViewId],
         state: &mut Self::ViewState,
         ctx: &mut crate::ctx::Context,
         anchor: &mut godot::prelude::Node,
-        anchor_type: crate::view::AnchorType,
+        anchor_type: crate::AnchorType,
     ) {
         self.inner
             .notify_state(path, &mut state.inner_view_state, ctx, anchor, anchor_type);
     }
 
-    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<godot::prelude::Gd<Node>>) {
         self.inner.collect_nodes(&state.inner_view_state, nodes);
     }
 }
 
-impl<N, Cb, Inner> ElementView<N> for OnBuild<N, Cb, Inner>
+impl<N, Inner> ElementView<N> for NodeRef<N, Inner>
 where
     Inner: ElementView<N>,
-    Cb: Fn(),
     N: Inherits<Node>,
 {
     fn get_node(&self, state: &Self::ViewState) -> Gd<N> {
@@ -91,6 +92,6 @@ where
     }
 }
 
-impl<N, Cb0, Inner> OnBuild<N, Cb0, Inner> {
+impl<N: Inherits<Node>, Inner> NodeRef<N, Inner> {
     impl_element_view! { N }
 }

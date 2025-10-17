@@ -1,4 +1,5 @@
 pub mod attr;
+pub mod node_ref;
 pub mod on_build;
 pub mod on_signal;
 pub mod on_teardown;
@@ -140,7 +141,7 @@ macro_rules! impl_element_view {
         ) -> $crate::view::element::attr::Attr<$node, Name, Self, BUILD_ONLY>
         where
             Name: AsRef<str>,
-            Value: ToGodot,
+            Value: godot::meta::ToGodot,
             $node: godot::prelude::Inherits<godot::prelude::Node>,
         {
             use std::marker::PhantomData;
@@ -158,7 +159,7 @@ macro_rules! impl_element_view {
         ) -> $crate::view::element::on_signal::OnSignal<$node, Name, Cb, Self>
         where
             Name: AsRef<str>,
-            Cb: Fn(&[&Variant]) + 'static,
+            Cb: Fn(&[&godot::builtin::Variant]) + 'static,
             $node: godot::prelude::Inherits<godot::prelude::Node>,
         {
             use std::marker::PhantomData;
@@ -171,7 +172,7 @@ macro_rules! impl_element_view {
         }
         pub fn on_build<Cb>(self, cb: Cb) -> $crate::OnBuild<$node, Cb, Self>
         where
-            Cb: Fn(Gd<$node>),
+            Cb: Fn(),
             $node: godot::prelude::Inherits<godot::prelude::Node>,
         {
             use std::marker::PhantomData;
@@ -209,6 +210,15 @@ macro_rules! impl_element_view {
                 value,
                 _p: PhantomData,
             }
+        }
+        pub fn node_ref(
+            self,
+            state: $crate::State<Option<Gd<$node>>>,
+        ) -> $crate::NodeRef<$node, Self>
+        where
+            $node: godot::prelude::Inherits<godot::prelude::Node>,
+        {
+            $crate::NodeRef { inner: self, state }
         }
     };
 }

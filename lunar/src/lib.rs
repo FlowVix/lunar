@@ -19,6 +19,7 @@ pub use view::{
         Element, ElementView, ElementViewState,
         attr::{Attr, AttrViewState},
         el,
+        node_ref::{NodeRef, NodeRefViewState},
         on_build::{OnBuild, OnBuildViewState},
         on_signal::{OnSignal, OnSignalViewState},
         on_teardown::{OnTeardown, OnTeardownViewState},

@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, rc::Rc};
 
 use godot::global::godot_print;
 
@@ -10,7 +10,7 @@ use crate::{
 pub struct State<T: 'static> {
     pub(crate) state_id: StateId,
     pub(crate) app_id: AppId,
-    pub(crate) _p: PhantomData<T>,
+    pub(crate) _p: PhantomData<*const T>,
 }
 impl<T> Copy for State<T> {}
 impl<T> Clone for State<T> {

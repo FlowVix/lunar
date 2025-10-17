@@ -59,6 +59,7 @@ pub enum ElemModifier {
         name: Ident,
         value: Expr,
     },
+    NodeRef(Expr),
 }
 
 impl Parse for Event {
@@ -90,6 +91,12 @@ impl Parse for ElemModifier {
             input.parse::<Token![=]>()?;
             let value = input.parse()?;
             Ok(ElemModifier::ThemeOverride { typ, name, value })
+        } else if input.peek(Token![ref]) {
+            input.parse::<Token![ref]>()?;
+            let inner;
+            parenthesized!(inner in input);
+            let expr = inner.parse()?;
+            Ok(ElemModifier::NodeRef(expr))
         } else {
             let name = input.parse()?;
             let build_only = input.peek(Token![@]);
@@ -283,6 +290,7 @@ impl ViewType {
                                 quote! { .theme_override::<::lunar::#typ, _>(stringify!(#name), #value) },
                             )
                         }
+                        ElemModifier::NodeRef(expr) => out.extend(quote! { .node_ref(#expr) }),
                     }
                 }
                 out
