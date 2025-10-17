@@ -1,17 +1,14 @@
 pub mod attr;
-// pub mod on_build;
-// pub mod on_mounted;
-// pub mod on_rebuild;
+pub mod on_build;
 pub mod on_signal;
-// pub mod on_teardown;
-// pub mod theme_override;
+pub mod on_teardown;
+pub mod theme_override;
 
 use std::marker::PhantomData;
 
 use godot::{
     builtin::Variant,
     classes::Node,
-    global::godot_print,
     meta::ToGodot,
     obj::{Gd, Inherits, NewAlloc},
 };

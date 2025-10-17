@@ -7,11 +7,7 @@ use godot::{
 };
 use std::marker::PhantomData;
 
-use crate::{
-    ElementView, ViewID,
-    ctx::{Message, MessageResult},
-    view::{AnchorType, ArgTuple, View, element::impl_element_view},
-};
+use crate::{AnchorType, ElementView, View, view::element::impl_element_view};
 
 macro_rules! theme_override_types {
     (
@@ -63,9 +59,9 @@ pub struct ThemeOverrideViewState<InnerViewState> {
     inner_view_state: InnerViewState,
 }
 
-impl<State: ArgTuple, N, Typ, Name, Inner> View<State> for ThemeOverride<N, Typ, Name, Inner>
+impl<N, Typ, Name, Inner> View for ThemeOverride<N, Typ, Name, Inner>
 where
-    Inner: ElementView<N, State>,
+    Inner: ElementView<N>,
     Typ: ThemeOverrideType,
     Name: AsRef<str> + Clone,
     N: Inherits<Control> + Inherits<Node>,
@@ -77,9 +73,8 @@ where
         ctx: &mut crate::ctx::Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
-        app_state: &mut State,
     ) -> Self::ViewState {
-        let inner_view_state = self.inner.build(ctx, anchor, anchor_type, app_state);
+        let inner_view_state = self.inner.build(ctx, anchor, anchor_type);
         let mut node = self.inner.get_node(&inner_view_state);
         Typ::set(node.upcast_mut(), self.name.as_ref(), self.value.clone());
         ThemeOverrideViewState { inner_view_state }
@@ -92,7 +87,6 @@ where
         ctx: &mut crate::ctx::Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
-        app_state: &mut State,
     ) {
         self.inner.rebuild(
             &prev.inner,
@@ -100,7 +94,6 @@ where
             ctx,
             anchor,
             anchor_type,
-            app_state,
         );
 
         let mut node = self.get_node(state);
@@ -116,37 +109,27 @@ where
         ctx: &mut crate::ctx::Context,
         anchor: &mut Node,
         anchor_type: AnchorType,
-        app_state: &mut State,
     ) {
-        self.inner.teardown(
-            &mut state.inner_view_state,
-            ctx,
-            anchor,
-            anchor_type,
-            app_state,
-        );
-    }
-
-    fn message(
-        &self,
-        msg: Message,
-        path: &[ViewID],
-        view_state: &mut Self::ViewState,
-        app_state: &mut State,
-    ) -> MessageResult {
         self.inner
-            .message(msg, path, &mut view_state.inner_view_state, app_state)
+            .teardown(&mut state.inner_view_state, ctx, anchor, anchor_type);
     }
 
-    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
-        self.inner.collect_nodes(&state.inner_view_state, nodes);
+    fn notify_state(
+        &self,
+        path: &[crate::view::ViewId],
+        state: &mut Self::ViewState,
+        ctx: &mut crate::ctx::Context,
+        anchor: &mut godot::prelude::Node,
+        anchor_type: crate::view::AnchorType,
+    ) {
+        self.inner
+            .notify_state(path, &mut state.inner_view_state, ctx, anchor, anchor_type);
     }
 }
 
-impl<State: ArgTuple, N, Typ, Name, Inner> ElementView<N, State>
-    for ThemeOverride<N, Typ, Name, Inner>
+impl<N, Typ, Name, Inner> ElementView<N> for ThemeOverride<N, Typ, Name, Inner>
 where
-    Inner: ElementView<N, State>,
+    Inner: ElementView<N>,
     Typ: ThemeOverrideType,
     Name: AsRef<str> + Clone,
     N: Inherits<Control> + Inherits<Node>,

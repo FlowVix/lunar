@@ -2,10 +2,10 @@ use godot::{
     builtin::{Callable, Variant},
     classes::Node,
     meta::ToGodot,
-    obj::{Inherits, NewAlloc},
+    obj::Inherits,
     prelude::Gd,
 };
-use std::{marker::PhantomData, rc::Rc, sync::Arc};
+use std::{marker::PhantomData, rc::Rc};
 
 use crate::view::{
     AnchorType, View,
