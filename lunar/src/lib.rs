@@ -20,9 +20,7 @@ pub use view::{
         attr::{Attr, AttrViewState},
         el,
         node_ref::{NodeRef, NodeRefViewState},
-        on_build::{OnBuild, OnBuildViewState},
         on_signal::{OnSignal, OnSignalViewState},
-        on_teardown::{OnTeardown, OnTeardownViewState},
         theme_override::{
             ThemeOverride, ThemeOverrideColor, ThemeOverrideConstant, ThemeOverrideFont,
             ThemeOverrideFontSize, ThemeOverrideIcon, ThemeOverrideStylebox, ThemeOverrideType,
@@ -30,7 +28,9 @@ pub use view::{
         },
     },
     iter::VecViewState,
+    on_build::{OnBuild, on_build},
     on_change::{OnChange, on_change},
+    on_teardown::{OnTeardown, on_teardown},
     option::OptionViewState,
     stateful::{Stateful, StatefulViewState, state::State, stateful},
 };

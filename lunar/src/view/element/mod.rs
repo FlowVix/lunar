@@ -1,8 +1,6 @@
 pub mod attr;
 pub mod node_ref;
-pub mod on_build;
 pub mod on_signal;
-pub mod on_teardown;
 pub mod theme_override;
 
 use std::marker::PhantomData;
@@ -167,30 +165,6 @@ macro_rules! impl_element_view {
                 inner: self,
                 name,
                 cb: cb.into(),
-                _p: PhantomData,
-            }
-        }
-        pub fn on_build<Cb>(self, cb: Cb) -> $crate::OnBuild<$node, Cb, Self>
-        where
-            Cb: Fn(),
-            $node: godot::prelude::Inherits<godot::prelude::Node>,
-        {
-            use std::marker::PhantomData;
-            $crate::OnBuild {
-                inner: self,
-                cb,
-                _p: PhantomData,
-            }
-        }
-        pub fn on_teardown<Cb>(self, cb: Cb) -> $crate::OnTeardown<$node, Cb, Self>
-        where
-            Cb: Fn(),
-            $node: godot::prelude::Inherits<godot::prelude::Node>,
-        {
-            use std::marker::PhantomData;
-            $crate::OnTeardown {
-                inner: self,
-                cb,
                 _p: PhantomData,
             }
         }

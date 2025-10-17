@@ -46,14 +46,9 @@ pub enum ViewType {
     },
 }
 
-pub struct Event {
-    typ: Ident,
-    arg: Option<Ident>,
-}
-
 pub enum ElemModifier {
     Attr(Ident, Expr, bool),
-    Event(Event, Expr),
+    OnSignal(Ident, Expr),
     ThemeOverride {
         typ: Ident,
         name: Ident,
@@ -62,27 +57,14 @@ pub enum ElemModifier {
     NodeRef(Expr),
 }
 
-impl Parse for Event {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let typ = input.parse()?;
-        let arg = if input.peek(Token![:]) {
-            input.parse::<Token![:]>()?;
-            Some(input.parse()?)
-        } else {
-            None
-        };
-        Ok(Self { typ, arg })
-    }
-}
-
 impl Parse for ElemModifier {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         if input.peek(Token![@]) {
             input.parse::<Token![@]>()?;
-            let typ = input.parse()?;
+            let name = input.parse()?;
             input.parse::<Token![=]>()?;
             let value = input.parse()?;
-            Ok(ElemModifier::Event(typ, value))
+            Ok(ElemModifier::OnSignal(name, value))
         } else if input.peek(Token![#]) {
             input.parse::<Token![#]>()?;
             let typ = input.parse()?;
@@ -275,11 +257,8 @@ impl ViewType {
                         ElemModifier::Attr(ident, expr, build_only) => out.extend(
                             quote! { .attr::<_, _, #build_only>(stringify!(#ident), #expr) },
                         ),
-                        ElemModifier::Event(event, expr) => {
-                            let func_name =
-                                Ident::new(&format!("on_{}", event.typ), event.typ.span());
-                            let arg = event.arg.as_ref().map(|v| quote! { stringify!(#v), });
-                            out.extend(quote! { .#func_name(#arg #expr) })
+                        ElemModifier::OnSignal(name, expr) => {
+                            out.extend(quote! { .on_signal(stringify!(#name), #expr) })
                         }
                         ElemModifier::ThemeOverride { typ, name, value } => {
                             let typ = Ident::new(
