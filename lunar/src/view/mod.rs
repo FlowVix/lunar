@@ -10,6 +10,7 @@ pub mod on_ready;
 pub mod on_teardown;
 pub mod option;
 pub mod stateful;
+pub mod when;
 
 use std::ops::Deref;
 

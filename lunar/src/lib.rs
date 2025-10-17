@@ -36,6 +36,7 @@ pub use view::{
     on_teardown::{OnTeardown, on_teardown},
     option::OptionViewState,
     stateful::{Stateful, StatefulViewState, state::State, stateful},
+    when::{When, WhenViewState, when},
 };
 
 // fn goy() -> impl View {

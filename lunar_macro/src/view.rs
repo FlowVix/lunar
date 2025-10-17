@@ -7,6 +7,10 @@ use syn::{
     parenthesized, parse::Parse, parse_quote, punctuated::Punctuated, token,
 };
 
+mod kw {
+    syn::custom_keyword!(when);
+}
+
 pub struct ViewBody {
     pub views: Vec<ViewType>,
 }
@@ -42,6 +46,11 @@ pub enum ViewType {
         name: Ident,
         typ: Type,
         init: Expr,
+        body: ViewBody,
+    },
+    When {
+        kw: kw::when,
+        expr: Expr,
         body: ViewBody,
     },
 }
@@ -171,6 +180,13 @@ impl Parse for ViewType {
                 init,
                 body,
             })
+        } else if input.peek(kw::when) {
+            let kw = input.parse::<kw::when>()?;
+            let expr = Expr::parse_without_eager_brace(input)?;
+            let inner;
+            braced!(inner in input);
+            let body = inner.parse()?;
+            Ok(ViewType::When { kw, expr, body })
         } else {
             let name = input.parse()?;
 
@@ -266,8 +282,8 @@ impl ViewType {
                                 typ.span(),
                             );
                             out.extend(
-                                quote! { .theme_override::<::lunar::#typ, _>(stringify!(#name), #value) },
-                            )
+                                        quote! { .theme_override::<::lunar::#typ, _>(stringify!(#name), #value) },
+                                    )
                         }
                         ElemModifier::NodeRef(expr) => out.extend(quote! { .node_ref(#expr) }),
                     }
@@ -310,6 +326,16 @@ impl ViewType {
             } => {
                 let body = body.gen_rust();
                 quote! { ::lunar::stateful::<#typ, _, _, _>(move || #init, move |#name| #body) }
+            }
+            ViewType::When { kw, expr, body } => {
+                let body = body.gen_rust();
+                let f = Ident::new("try", kw.span);
+                quote! {
+                    {
+                        stringify!(#f);
+                        ::lunar::when(#expr, || #body)
+                    }
+                }
             }
         }
     }

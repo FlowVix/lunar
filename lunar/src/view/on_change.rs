@@ -2,6 +2,7 @@ use crate::View;
 
 pub struct OnChange<T, Cb> {
     value: T,
+    initial: bool,
     cb: Cb,
 }
 
@@ -18,6 +19,9 @@ where
         anchor: &mut godot::prelude::Node,
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
+        if self.initial {
+            (self.cb)();
+        }
     }
 
     fn rebuild(
@@ -60,10 +64,10 @@ where
     }
 }
 
-pub fn on_change<T, Cb>(value: T, cb: Cb) -> OnChange<T, Cb>
+pub fn on_change<T, Cb>(value: T, initial: bool, cb: Cb) -> OnChange<T, Cb>
 where
     T: PartialEq,
     Cb: Fn(),
 {
-    OnChange { value, cb }
+    OnChange { value, initial, cb }
 }
