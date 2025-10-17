@@ -90,6 +90,10 @@ where
         self.inner
             .notify_state(path, &mut state.inner_view_state, ctx, anchor, anchor_type);
     }
+
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        self.inner.collect_nodes(&state.inner_view_state, nodes);
+    }
 }
 
 impl<N, Name, Inner, const BUILD_ONLY: bool> ElementView<N> for Attr<N, Name, Inner, BUILD_ONLY>

@@ -102,32 +102,9 @@ where
             .notify_state(path, &mut state.inner_view_state, ctx, anchor, anchor_type);
     }
 
-    // fn message(
-    //     &self,
-    //     msg: crate::Message,
-    //     path: &[crate::ViewID],
-    //     view_state: &mut Self::ViewState,
-    //     app_state: &mut State,
-    // ) -> MessageResult {
-    //     if path.is_empty() {
-    //         match msg {
-    //             Message::Signal { ref name, ref args } => {
-    //                 if **name == *self.name.as_ref() {
-    //                     let node = self.get_node(view_state);
-    //                     (self.cb)(app_state, args, node);
-    //                     return MessageResult::Success;
-    //                 }
-    //             }
-    //             _ => {}
-    //         }
-    //     }
-    //     self.inner
-    //         .message(msg, path, &mut view_state.inner_view_state, app_state)
-    // }
-
-    // fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
-    //     self.inner.collect_nodes(&state.inner_view_state, nodes);
-    // }
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        self.inner.collect_nodes(&state.inner_view_state, nodes);
+    }
 }
 
 impl<N, Name, Cb, Inner> ElementView<N> for OnSignal<N, Name, Cb, Inner>

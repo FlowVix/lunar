@@ -126,6 +126,14 @@ where
             state.inner = new;
         }
     }
+
+    fn collect_nodes(
+        &self,
+        state: &Self::ViewState,
+        nodes: &mut Vec<godot::prelude::Gd<godot::prelude::Node>>,
+    ) {
+        state.inner.collect_nodes(&state.inner_state, nodes);
+    }
 }
 
 pub fn stateful<T, Inner, StateFn, InnerFn>(

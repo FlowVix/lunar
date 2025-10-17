@@ -1,7 +1,7 @@
 use std::{any::Any, cell::RefCell, rc::Rc};
 
 use godot::{classes::Node, obj::Gd};
-use slotmap::{SlotMap, new_key_type};
+use slotmap::{SecondaryMap, SlotMap, new_key_type};
 
 use crate::{
     ctx::Context,
@@ -36,4 +36,5 @@ pub struct System {
 thread_local! {
     pub static STATES: RefCell<SlotMap<StateId, StateData>> = RefCell::new(SlotMap::default());
     pub static APPS: RefCell<SlotMap<AppId, AppData>> = RefCell::new(SlotMap::default());
+    pub static APP_NOTIFICATIONS: RefCell<SecondaryMap<AppId, Vec<Rc<[ViewId]>>>> = RefCell::new(SecondaryMap::new());
 }

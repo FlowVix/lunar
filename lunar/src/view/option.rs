@@ -126,4 +126,16 @@ where
             })
         }
     }
+
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        assert_eq!(
+            self.is_some(),
+            state.inner.is_some(),
+            "Bruh why are they not the same"
+        );
+        if let Some((val, (inner, _))) = self.as_ref().zip(state.inner.as_ref()) {
+            val.collect_nodes(inner, nodes);
+        }
+        nodes.push(state.anchor.clone());
+    }
 }

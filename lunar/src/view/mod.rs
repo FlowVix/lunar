@@ -1,8 +1,11 @@
 pub mod any;
 pub mod either;
 pub mod element;
+pub mod iter;
 pub mod option;
 pub mod stateful;
+
+use std::ops::Deref;
 
 use godot::{classes::Node, obj::Gd};
 
@@ -71,6 +74,60 @@ pub trait View {
         anchor: &mut godot::prelude::Node,
         anchor_type: AnchorType,
     );
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>);
+}
+
+impl<Inner> View for Box<Inner>
+where
+    Inner: View + ?Sized,
+{
+    type ViewState = Inner::ViewState;
+
+    fn build(
+        &self,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) -> Self::ViewState {
+        self.deref().build(ctx, anchor, anchor_type)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        self.deref().rebuild(prev, state, ctx, anchor, anchor_type);
+    }
+
+    fn teardown(
+        &self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        self.deref().teardown(state, ctx, anchor, anchor_type);
+    }
+
+    fn notify_state(
+        &self,
+        path: &[ViewId],
+        state: &mut Self::ViewState,
+        ctx: &mut crate::ctx::Context,
+        anchor: &mut godot::prelude::Node,
+        anchor_type: AnchorType,
+    ) {
+        self.deref()
+            .notify_state(path, state, ctx, anchor, anchor_type);
+    }
+
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        self.deref().collect_nodes(state, nodes);
+    }
 }
 
 macro_rules! tuple_impl {
@@ -135,6 +192,13 @@ macro_rules! tuple_impl {
                             }
                         )*
                     }
+                }
+
+                #[allow(unused_variables)]
+                fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+                    $(
+                        self.$v.collect_nodes(&state.$v.0, nodes);
+                    )*
                 }
             }
         }

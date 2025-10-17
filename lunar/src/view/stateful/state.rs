@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use godot::global::godot_print;
 
 use crate::{
-    system::{APPS, AppId, STATES, StateId},
+    system::{APP_NOTIFICATIONS, APPS, AppId, STATES, StateId},
     view::AnchorType,
 };
 
@@ -21,24 +21,9 @@ impl<T> Clone for State<T> {
 
 impl<T> State<T> {
     pub fn notify(&self) {
-        let (ctx, view, view_state, mut root) = APPS.with_borrow(|apps| {
-            let v = &apps[self.app_id];
-            (
-                v.ctx.clone(),
-                v.view.clone(),
-                v.view_state.clone(),
-                v.root.clone(),
-            )
-        });
         let path = STATES.with_borrow_mut(|states| states[self.state_id].path.clone());
-
-        view.borrow().dyn_notify_state(
-            &path,
-            &mut view_state.borrow_mut(),
-            &mut ctx.borrow_mut(),
-            &mut root,
-            AnchorType::ChildOf,
-        );
+        APP_NOTIFICATIONS
+            .with_borrow_mut(|map| map.entry(self.app_id).unwrap().or_default().push(path));
     }
     pub fn get(&self) -> T
     where
@@ -59,6 +44,17 @@ impl<T> State<T> {
                 .clone()
         })
     }
+    pub fn with<R, F>(&self, f: F) -> R
+    where
+        F: FnOnce(&T) -> R,
+    {
+        let value = STATES.with_borrow_mut(|states| states[self.state_id].value.clone());
+        f(value
+            .try_borrow()
+            .expect("cannot get value during an `update` call")
+            .downcast_ref::<T>()
+            .unwrap())
+    }
     pub fn set(&self, to: T) {
         STATES.with_borrow(|states| {
             *states[self.state_id]
@@ -68,5 +64,18 @@ impl<T> State<T> {
                 .unwrap() = to;
         });
         self.notify();
+    }
+    pub fn update<R, F>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut T) -> R,
+    {
+        let value = STATES.with_borrow_mut(|states| states[self.state_id].value.clone());
+        let ret = f(value
+            .try_borrow_mut()
+            .expect("cannot update value during another `update` call")
+            .downcast_mut::<T>()
+            .unwrap());
+        self.notify();
+        ret
     }
 }

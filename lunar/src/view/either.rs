@@ -157,56 +157,21 @@ where
         }
     }
 
-    // fn message(
-    //     &self,
-    //     msg: Message,
-    //     path: &[ViewID],
-    //     view_state: &mut Self::ViewState,
-    //     app_state: &mut State,
-    // ) -> MessageResult {
-    //     assert_eq!(
-    //         self.is_left(),
-    //         view_state.inner.is_left(),
-    //         "Bruh why are they not the same"
-    //     );
-    //     if let Some((start, rest)) = path.split_first() {
-    //         match (self, &mut view_state.inner) {
-    //             (Left(val), Left(inner)) => {
-    //                 if *start == view_state.id {
-    //                     val.message(msg, rest, inner, app_state)
-    //                 } else {
-    //                     MessageResult::Stale(msg)
-    //                 }
-    //             }
-    //             (Right(val), Right(inner)) => {
-    //                 if *start == view_state.id {
-    //                     val.message(msg, rest, inner, app_state)
-    //                 } else {
-    //                     MessageResult::Stale(msg)
-    //                 }
-    //             }
-    //             _ => unreachable!(),
-    //         }
-    //     } else {
-    //         MessageResult::Stale(msg)
-    //     }
-    // }
-
-    // fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
-    //     assert_eq!(
-    //         self.is_left(),
-    //         state.inner.is_left(),
-    //         "Bruh why are they not the same"
-    //     );
-    //     match (self, &state.inner) {
-    //         (Left(val), Left(inner)) => {
-    //             val.collect_nodes(inner, nodes);
-    //         }
-    //         (Right(val), Right(inner)) => {
-    //             val.collect_nodes(inner, nodes);
-    //         }
-    //         _ => unreachable!(),
-    //     }
-    //     nodes.push(state.anchor.clone());
-    // }
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        assert_eq!(
+            self.is_left(),
+            state.inner.is_left(),
+            "Bruh why are they not the same"
+        );
+        match (self, &state.inner) {
+            (Left(val), Left(inner)) => {
+                val.collect_nodes(inner, nodes);
+            }
+            (Right(val), Right(inner)) => {
+                val.collect_nodes(inner, nodes);
+            }
+            _ => unreachable!(),
+        }
+        nodes.push(state.anchor.clone());
+    }
 }

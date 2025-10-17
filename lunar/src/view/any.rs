@@ -41,6 +41,7 @@ pub trait AnyView {
         anchor: &mut Node,
         anchor_type: AnchorType,
     );
+    fn dyn_collect_nodes(&self, state: &AnyViewState, nodes: &mut Vec<Gd<Node>>);
 }
 
 pub struct AnyViewState {
@@ -148,6 +149,15 @@ where
             });
         }
     }
+
+    fn dyn_collect_nodes(&self, state: &AnyViewState, nodes: &mut Vec<Gd<Node>>) {
+        let inner = state
+            .inner
+            .downcast_ref::<V::ViewState>()
+            .expect("What the hell bro");
+        self.collect_nodes(inner, nodes);
+        nodes.push(state.anchor.clone());
+    }
 }
 
 // MARK: View for dyn AnyView
@@ -196,6 +206,10 @@ macro_rules! dyn_anyview_impl {
                 anchor_type: AnchorType,
             ) {
                 self.dyn_notify_state(path, state, ctx, anchor, anchor_type);
+            }
+
+            fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+                self.dyn_collect_nodes(state, nodes);
             }
         }
     };

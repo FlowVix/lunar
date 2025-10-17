@@ -110,6 +110,10 @@ where
         self.children
             .notify_state(path, &mut state.child_view_state, ctx, anchor, anchor_type)
     }
+
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        nodes.push(state.node.clone().upcast::<Node>());
+    }
 }
 
 pub trait ElementView<N: Inherits<Node>>: View + Sized {
@@ -165,71 +169,47 @@ macro_rules! impl_element_view {
                 _p: PhantomData,
             }
         }
-        // pub fn on_mounted<State, Cb>(self, cb: Cb) -> $crate::OnMounted<$node, Cb, Self>
-        // where
-        //     Cb: Fn(&mut State, Gd<$node>),
-        //     $node: godot::prelude::Inherits<godot::prelude::Node>,
-        // {
-        //     use std::marker::PhantomData;
-        //     $crate::OnMounted {
-        //         inner: self,
-        //         cb,
-        //         _p: PhantomData,
-        //     }
-        // }
-        // pub fn on_build<State, Cb>(self, cb: Cb) -> $crate::OnBuild<$node, Cb, Self>
-        // where
-        //     Cb: Fn(&mut State, Gd<$node>),
-        //     $node: godot::prelude::Inherits<godot::prelude::Node>,
-        // {
-        //     use std::marker::PhantomData;
-        //     $crate::OnBuild {
-        //         inner: self,
-        //         cb,
-        //         _p: PhantomData,
-        //     }
-        // }
-        // pub fn on_rebuild<Cb>(self, cb: Cb) -> $crate::OnRebuild<$node, Cb, Self>
-        // where
-        //     Cb: Fn(Gd<$node>),
-        //     $node: godot::prelude::Inherits<godot::prelude::Node>,
-        // {
-        //     use std::marker::PhantomData;
-        //     $crate::OnRebuild {
-        //         inner: self,
-        //         cb,
-        //         _p: PhantomData,
-        //     }
-        // }
-        // pub fn on_teardown<State, Cb>(self, cb: Cb) -> $crate::OnTeardown<$node, Cb, Self>
-        // where
-        //     Cb: Fn(&mut State, Gd<$node>),
-        //     $node: godot::prelude::Inherits<godot::prelude::Node>,
-        // {
-        //     use std::marker::PhantomData;
-        //     $crate::OnTeardown {
-        //         inner: self,
-        //         cb,
-        //         _p: PhantomData,
-        //     }
-        // }
-        // pub fn theme_override<Typ: crate::ThemeOverrideType, Name>(
-        //     self,
-        //     name: Name,
-        //     value: Typ::ValueType,
-        // ) -> $crate::ThemeOverride<$node, Typ, Name, Self>
-        // where
-        //     Name: AsRef<str>,
-        //     $node: godot::prelude::Inherits<godot::prelude::Node>,
-        // {
-        //     use std::marker::PhantomData;
-        //     $crate::ThemeOverride {
-        //         inner: self,
-        //         name,
-        //         value,
-        //         _p: PhantomData,
-        //     }
-        // }
+        pub fn on_build<Cb>(self, cb: Cb) -> $crate::OnBuild<$node, Cb, Self>
+        where
+            Cb: Fn(Gd<$node>),
+            $node: godot::prelude::Inherits<godot::prelude::Node>,
+        {
+            use std::marker::PhantomData;
+            $crate::OnBuild {
+                inner: self,
+                cb,
+                _p: PhantomData,
+            }
+        }
+        pub fn on_teardown<Cb>(self, cb: Cb) -> $crate::OnTeardown<$node, Cb, Self>
+        where
+            Cb: Fn(),
+            $node: godot::prelude::Inherits<godot::prelude::Node>,
+        {
+            use std::marker::PhantomData;
+            $crate::OnTeardown {
+                inner: self,
+                cb,
+                _p: PhantomData,
+            }
+        }
+        pub fn theme_override<Typ: crate::ThemeOverrideType, Name>(
+            self,
+            name: Name,
+            value: Typ::ValueType,
+        ) -> $crate::ThemeOverride<$node, Typ, Name, Self>
+        where
+            Name: AsRef<str>,
+            $node: godot::prelude::Inherits<godot::prelude::Node>,
+        {
+            use std::marker::PhantomData;
+            $crate::ThemeOverride {
+                inner: self,
+                name,
+                value,
+                _p: PhantomData,
+            }
+        }
     };
 }
 pub(crate) use impl_element_view;

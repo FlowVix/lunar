@@ -4,9 +4,10 @@
 mod app;
 mod ctx;
 mod system;
+mod util;
 mod view;
 
-pub use app::{App, run};
+pub use app::{App, start};
 pub use ctx::Context;
 pub use either;
 pub use lunar_macro::view;
@@ -27,6 +28,7 @@ pub use view::{
             ThemeOverrideViewState,
         },
     },
+    iter::VecViewState,
     option::OptionViewState,
     stateful::{Stateful, StatefulViewState, state::State, stateful},
 };
