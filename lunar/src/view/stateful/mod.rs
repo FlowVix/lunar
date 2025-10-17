@@ -90,6 +90,7 @@ where
                 .inner
                 .teardown(&mut state.inner_state, ctx, anchor, anchor_type);
         });
+        STATES.with_borrow_mut(|states| states.remove(state.state.state_id));
     }
 
     fn notify_state(

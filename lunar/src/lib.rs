@@ -29,6 +29,7 @@ pub use view::{
         },
     },
     iter::VecViewState,
+    on_change::{OnChange, on_change},
     option::OptionViewState,
     stateful::{Stateful, StatefulViewState, state::State, stateful},
 };

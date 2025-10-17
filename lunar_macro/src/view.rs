@@ -313,7 +313,7 @@ impl ViewType {
             ViewType::If(if_view) => if_view.gen_rust(),
             ViewType::Dyn(view_body) => {
                 let body = view_body.gen_rust();
-                quote! { ( Box::new(#body) as Box<dyn ::lunar::AnyView<_>> ) }
+                quote! { ( Box::new(#body) as Box<dyn ::lunar::AnyView> ) }
             }
             ViewType::State {
                 name,
