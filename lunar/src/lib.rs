@@ -29,7 +29,7 @@ pub use view::{
     },
     iter::VecViewState,
     on_build::{OnBuild, on_build},
-    on_change::{OnChange, on_change},
+    on_change::{OnChange, on_change, on_change_init},
     on_physics_process::{__LunarOnPhysicsProcessNode, OnPhysicsProcess, on_physics_process},
     on_process::{__LunarOnProcessNode, OnProcess, on_process},
     on_ready::{__LunarOnReadyNode, OnReady, on_ready},

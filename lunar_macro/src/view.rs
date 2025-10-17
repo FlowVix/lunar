@@ -9,6 +9,7 @@ use syn::{
 
 mod kw {
     syn::custom_keyword!(when);
+    syn::custom_keyword!(state);
 }
 
 pub struct ViewBody {
@@ -43,6 +44,7 @@ pub enum ViewType {
     If(IfView),
     Dyn(ViewBody),
     State {
+        kw: kw::state,
         name: Ident,
         typ: Type,
         init: Expr,
@@ -161,8 +163,8 @@ impl Parse for ViewType {
             braced!(inner in input);
             let body = inner.parse()?;
             Ok(ViewType::Dyn(body))
-        } else if input.peek(Token![use]) {
-            input.parse::<Token![use]>()?;
+        } else if input.peek(kw::state) {
+            let kw = input.parse::<kw::state>()?;
             let name = input.parse()?;
             let typ = if input.peek(Token![:]) {
                 input.parse::<Token![:]>()?;
@@ -175,6 +177,7 @@ impl Parse for ViewType {
             input.parse::<Token![;]>()?;
             let body = input.parse()?;
             Ok(ViewType::State {
+                kw,
                 name,
                 typ,
                 init,
@@ -319,20 +322,27 @@ impl ViewType {
                 quote! { ( Box::new(#body) as Box<dyn ::lunar::AnyView> ) }
             }
             ViewType::State {
+                kw,
                 name,
                 typ,
                 init,
                 body,
             } => {
                 let body = body.gen_rust();
-                quote! { ::lunar::stateful::<#typ, _, _, _>(move || #init, move |#name| #body) }
+                let kw = Ident::new("try", kw.span);
+                quote! {
+                    {
+                        stringify!(#kw);
+                        ::lunar::stateful::<#typ, _, _, _>(move || #init, move |#name| #body)
+                    }
+                }
             }
             ViewType::When { kw, expr, body } => {
                 let body = body.gen_rust();
-                let f = Ident::new("try", kw.span);
+                let kw = Ident::new("try", kw.span);
                 quote! {
                     {
-                        stringify!(#f);
+                        stringify!(#kw);
                         ::lunar::when(#expr, || #body)
                     }
                 }

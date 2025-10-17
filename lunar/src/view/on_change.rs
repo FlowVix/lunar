@@ -64,10 +64,25 @@ where
     }
 }
 
-pub fn on_change<T, Cb>(value: T, initial: bool, cb: Cb) -> OnChange<T, Cb>
+pub fn on_change<T, Cb>(value: T, cb: Cb) -> OnChange<T, Cb>
 where
     T: PartialEq,
     Cb: Fn(),
 {
-    OnChange { value, initial, cb }
+    OnChange {
+        value,
+        initial: false,
+        cb,
+    }
+}
+pub fn on_change_init<T, Cb>(value: T, cb: Cb) -> OnChange<T, Cb>
+where
+    T: PartialEq,
+    Cb: Fn(),
+{
+    OnChange {
+        value,
+        initial: true,
+        cb,
+    }
 }
