@@ -28,6 +28,7 @@ pub use view::{
         },
     },
     iter::VecViewState,
+    memo::{Memo, MemoViewState, memo},
     on_build::{OnBuild, on_build},
     on_change::{OnChange, on_change, on_change_init},
     on_physics_process::{__LunarOnPhysicsProcessNode, OnPhysicsProcess, on_physics_process},

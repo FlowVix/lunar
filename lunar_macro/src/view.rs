@@ -12,6 +12,7 @@ mod kw {
     syn::custom_keyword!(state);
     syn::custom_keyword!(quiet);
     syn::custom_keyword!(build);
+    syn::custom_keyword!(memo);
 }
 
 pub struct ViewBody {
@@ -55,6 +56,11 @@ pub enum ViewType {
     },
     When {
         kw: kw::when,
+        expr: Expr,
+        body: ViewBody,
+    },
+    Memo {
+        kw: kw::memo,
         expr: Expr,
         body: ViewBody,
     },
@@ -225,6 +231,13 @@ impl Parse for ViewType {
             braced!(inner in input);
             let body = inner.parse()?;
             Ok(ViewType::When { kw, expr, body })
+        } else if input.peek(kw::memo) {
+            let kw = input.parse::<kw::memo>()?;
+            let expr = Expr::parse_without_eager_brace(input)?;
+            let inner;
+            braced!(inner in input);
+            let body = inner.parse()?;
+            Ok(ViewType::Memo { kw, expr, body })
         } else {
             let name = input.parse()?;
 
@@ -400,6 +413,16 @@ impl ViewType {
                     {
                         stringify!(#kw);
                         ::lunar::when(#expr, || #body)
+                    }
+                }
+            }
+            ViewType::Memo { kw, expr, body } => {
+                let body = body.gen_rust();
+                let kw = Ident::new("try", kw.span);
+                quote! {
+                    {
+                        stringify!(#kw);
+                        ::lunar::memo(#expr, || #body)
                     }
                 }
             }
