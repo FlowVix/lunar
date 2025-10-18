@@ -1,6 +1,10 @@
 pub mod state;
 
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    marker::PhantomData,
+    rc::Rc,
+};
 
 use crate::{
     system::{STATES, StateData, StateId},
@@ -8,7 +12,7 @@ use crate::{
 };
 
 pub struct Stateful<StateFn, InnerFn, const QUIET: bool> {
-    state_fn: StateFn,
+    state_fn: Cell<Option<StateFn>>,
     inner_fn: InnerFn,
 }
 pub struct StatefulViewState<T: 'static, Inner: View> {
@@ -21,7 +25,7 @@ pub struct StatefulViewState<T: 'static, Inner: View> {
 impl<StateFn, InnerFn, T, Inner, const QUIET: bool> View for Stateful<StateFn, InnerFn, QUIET>
 where
     T: 'static,
-    StateFn: Fn() -> T,
+    StateFn: FnOnce() -> T,
     InnerFn: Fn(State<T>) -> Inner,
     Inner: View,
 {
@@ -33,7 +37,7 @@ where
         anchor: &mut godot::prelude::Node,
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
-        let value = (self.state_fn)();
+        let value = self.state_fn.take().unwrap()();
         let path: Rc<[ViewId]> = ctx.path.clone().into();
         let id = STATES.with_borrow_mut(|states| {
             states.insert(StateData {
@@ -144,12 +148,12 @@ pub fn stateful<T, Inner, StateFn, InnerFn>(
 ) -> Stateful<StateFn, InnerFn, false>
 where
     T: 'static,
-    StateFn: Fn() -> T,
+    StateFn: FnOnce() -> T,
     InnerFn: Fn(State<T>) -> Inner,
     Inner: View,
 {
     Stateful {
-        state_fn: init,
+        state_fn: Cell::new(Some(init)),
         inner_fn: view,
     }
 }
@@ -159,12 +163,12 @@ pub fn stateful_quiet<T, Inner, StateFn, InnerFn>(
 ) -> Stateful<StateFn, InnerFn, true>
 where
     T: 'static,
-    StateFn: Fn() -> T,
+    StateFn: FnOnce() -> T,
     InnerFn: Fn(State<T>) -> Inner,
     Inner: View,
 {
     Stateful {
-        state_fn: init,
+        state_fn: Cell::new(Some(init)),
         inner_fn: view,
     }
 }

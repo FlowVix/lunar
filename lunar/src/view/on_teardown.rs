@@ -1,12 +1,14 @@
+use std::cell::Cell;
+
 use crate::View;
 
 pub struct OnTeardown<Cb> {
-    cb: Cb,
+    cb: Cell<Option<Cb>>,
 }
 
 impl<Cb> View for OnTeardown<Cb>
 where
-    Cb: Fn(),
+    Cb: FnOnce(),
 {
     type ViewState = ();
 
@@ -35,7 +37,7 @@ where
         anchor: &mut godot::prelude::Node,
         anchor_type: super::AnchorType,
     ) {
-        (self.cb)()
+        self.cb.take().unwrap()()
     }
 
     fn notify_state(
@@ -58,7 +60,9 @@ where
 
 pub fn on_teardown<Cb>(cb: Cb) -> OnTeardown<Cb>
 where
-    Cb: Fn(),
+    Cb: FnOnce(),
 {
-    OnTeardown { cb }
+    OnTeardown {
+        cb: Cell::new(Some(cb)),
+    }
 }

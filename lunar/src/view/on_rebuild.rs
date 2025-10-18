@@ -1,12 +1,14 @@
+use std::cell::Cell;
+
 use crate::View;
 
 pub struct OnRebuild<Cb> {
-    cb: Cb,
+    cb: Cell<Option<Cb>>,
 }
 
 impl<Cb> View for OnRebuild<Cb>
 where
-    Cb: Fn(),
+    Cb: FnOnce(),
 {
     type ViewState = ();
 
@@ -26,7 +28,7 @@ where
         anchor: &mut godot::prelude::Node,
         anchor_type: super::AnchorType,
     ) {
-        (self.cb)()
+        self.cb.take().unwrap()()
     }
 
     fn teardown(
@@ -58,7 +60,9 @@ where
 
 pub fn on_rebuild<Cb>(cb: Cb) -> OnRebuild<Cb>
 where
-    Cb: Fn(),
+    Cb: FnOnce(),
 {
-    OnRebuild { cb }
+    OnRebuild {
+        cb: Cell::new(Some(cb)),
+    }
 }
