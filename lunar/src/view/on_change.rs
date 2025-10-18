@@ -1,9 +1,11 @@
+use std::cell::Cell;
+
 use crate::View;
 
 pub struct OnChange<T, Cb> {
     value: T,
     initial: bool,
-    cb: Cb,
+    cb: Cell<Option<Cb>>,
 }
 
 impl<T, Cb> View for OnChange<T, Cb>
@@ -20,7 +22,7 @@ where
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
         if self.initial {
-            (self.cb)();
+            self.cb.take().unwrap()();
         }
     }
 
@@ -33,7 +35,7 @@ where
         anchor_type: super::AnchorType,
     ) {
         if self.value != prev.value {
-            (self.cb)()
+            self.cb.take().unwrap()();
         }
     }
 
@@ -72,7 +74,7 @@ where
     OnChange {
         value,
         initial: false,
-        cb,
+        cb: Cell::new(Some(cb)),
     }
 }
 pub fn on_change_init<T, Cb>(value: T, cb: Cb) -> OnChange<T, Cb>
@@ -83,6 +85,6 @@ where
     OnChange {
         value,
         initial: true,
-        cb,
+        cb: Cell::new(Some(cb)),
     }
 }
