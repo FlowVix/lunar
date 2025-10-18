@@ -55,6 +55,12 @@ pub enum ViewType {
         expr: Expr,
         body: ViewBody,
     },
+    Let {
+        pat: Pat,
+        typ: Type,
+        value: Expr,
+        body: ViewBody,
+    },
 }
 
 pub enum ElemModifier {
@@ -183,6 +189,25 @@ impl Parse for ViewType {
                 init,
                 body,
             })
+        } else if input.peek(Token![let]) {
+            input.parse::<Token![let]>()?;
+            let pat = Pat::parse_single(input)?;
+            let typ = if input.peek(Token![:]) {
+                input.parse::<Token![:]>()?;
+                input.parse()?
+            } else {
+                parse_quote! { _ }
+            };
+            input.parse::<Token![=]>()?;
+            let value = input.parse()?;
+            input.parse::<Token![;]>()?;
+            let body = input.parse()?;
+            Ok(ViewType::Let {
+                pat,
+                typ,
+                value,
+                body,
+            })
         } else if input.peek(kw::when) {
             let kw = input.parse::<kw::when>()?;
             let expr = Expr::parse_without_eager_brace(input)?;
@@ -285,8 +310,8 @@ impl ViewType {
                                 typ.span(),
                             );
                             out.extend(
-                                        quote! { .theme_override::<::lunar::#typ, _>(stringify!(#name), #value) },
-                                    )
+                                quote! { .theme_override::<::lunar::#typ, _>(stringify!(#name), #value) },
+                            )
                         }
                         ElemModifier::NodeRef(expr) => out.extend(quote! { .node_ref(#expr) }),
                     }
@@ -344,6 +369,20 @@ impl ViewType {
                     {
                         stringify!(#kw);
                         ::lunar::when(#expr, || #body)
+                    }
+                }
+            }
+            ViewType::Let {
+                pat,
+                typ,
+                value,
+                body,
+            } => {
+                let body = body.gen_rust();
+                quote! {
+                    {
+                        let #pat: #typ = #value;
+                        #body
                     }
                 }
             }
