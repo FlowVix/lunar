@@ -34,6 +34,7 @@ pub use view::{
     on_physics_process::{__LunarOnPhysicsProcessNode, OnPhysicsProcess, on_physics_process},
     on_process::{__LunarOnProcessNode, OnProcess, on_process},
     on_ready::{__LunarOnReadyNode, OnReady, on_ready},
+    on_rebuild::{OnRebuild, on_rebuild},
     on_teardown::{OnTeardown, on_teardown},
     option::OptionViewState,
     stateful::{Stateful, StatefulViewState, state::State, stateful, stateful_quiet},

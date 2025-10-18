@@ -8,6 +8,7 @@ pub mod on_change;
 pub mod on_physics_process;
 pub mod on_process;
 pub mod on_ready;
+pub mod on_rebuild;
 pub mod on_teardown;
 pub mod option;
 pub mod stateful;
