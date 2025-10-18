@@ -10,6 +10,7 @@ use crate::{
 pub struct State<T: 'static> {
     pub(crate) state_id: StateId,
     pub(crate) app_id: AppId,
+    pub(crate) quiet: bool,
     pub(crate) _p: PhantomData<*const T>,
 }
 impl<T> Copy for State<T> {}
@@ -21,6 +22,9 @@ impl<T> Clone for State<T> {
 
 impl<T> State<T> {
     pub fn notify(&self) {
+        if self.quiet {
+            return;
+        }
         let path = STATES.with_borrow_mut(|states| states[self.state_id].path.clone());
         APP_NOTIFICATIONS
             .with_borrow_mut(|map| map.entry(self.app_id).unwrap().or_default().push(path));

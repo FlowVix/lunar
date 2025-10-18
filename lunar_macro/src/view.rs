@@ -10,6 +10,8 @@ use syn::{
 mod kw {
     syn::custom_keyword!(when);
     syn::custom_keyword!(state);
+    syn::custom_keyword!(quiet);
+    syn::custom_keyword!(build);
 }
 
 pub struct ViewBody {
@@ -45,6 +47,7 @@ pub enum ViewType {
     Dyn(ViewBody),
     State {
         kw: kw::state,
+        quiet: Option<kw::quiet>,
         name: Ident,
         typ: Type,
         init: Expr,
@@ -64,7 +67,7 @@ pub enum ViewType {
 }
 
 pub enum ElemModifier {
-    Attr(Ident, Expr, bool),
+    Attr(Ident, Expr, Option<kw::build>),
     OnSignal(Ident, Expr),
     ThemeOverride {
         typ: Ident,
@@ -97,14 +100,15 @@ impl Parse for ElemModifier {
             let expr = inner.parse()?;
             Ok(ElemModifier::NodeRef(expr))
         } else {
+            let build = if input.peek(kw::build) {
+                Some(input.parse::<kw::build>()?)
+            } else {
+                None
+            };
             let name = input.parse()?;
-            let build_only = input.peek(Token![@]);
-            if build_only {
-                input.parse::<Token![@]>()?;
-            }
             input.parse::<Token![=]>()?;
             let value = input.parse()?;
-            Ok(ElemModifier::Attr(name, value, build_only))
+            Ok(ElemModifier::Attr(name, value, build))
         }
     }
 }
@@ -171,6 +175,11 @@ impl Parse for ViewType {
             Ok(ViewType::Dyn(body))
         } else if input.peek(kw::state) {
             let kw = input.parse::<kw::state>()?;
+            let quiet = if input.peek(kw::quiet) {
+                Some(input.parse::<kw::quiet>()?)
+            } else {
+                None
+            };
             let name = input.parse()?;
             let typ = if input.peek(Token![:]) {
                 input.parse::<Token![:]>()?;
@@ -184,6 +193,7 @@ impl Parse for ViewType {
             let body = input.parse()?;
             Ok(ViewType::State {
                 kw,
+                quiet,
                 name,
                 typ,
                 init,
@@ -298,11 +308,18 @@ impl ViewType {
                 }
                 for m in modifiers.iter().flatten() {
                     match m {
-                        ElemModifier::Attr(ident, expr, build_only) => out.extend(
-                            quote! { .attr::<_, _, #build_only>(stringify!(#ident), #expr) },
-                        ),
+                        ElemModifier::Attr(ident, expr, build) => {
+                            let build = build.map(|v| Ident::new("try", v.span));
+                            if let Some(build) = build {
+                                out.extend(
+                                    quote! { .attr_build({ stringify!(#build); stringify!(#ident) }, #expr) },
+                                );
+                            } else {
+                                out.extend(quote! { .attr(stringify!(#ident), #expr) });
+                            }
+                        }
                         ElemModifier::OnSignal(name, expr) => {
-                            out.extend(quote! { .on_signal(stringify!(#name), #expr) })
+                            out.extend(quote! { .on_signal(stringify!(#name), #expr) });
                         }
                         ElemModifier::ThemeOverride { typ, name, value } => {
                             let typ = Ident::new(
@@ -311,9 +328,11 @@ impl ViewType {
                             );
                             out.extend(
                                 quote! { .theme_override::<::lunar::#typ, _>(stringify!(#name), #value) },
-                            )
+                            );
                         }
-                        ElemModifier::NodeRef(expr) => out.extend(quote! { .node_ref(#expr) }),
+                        ElemModifier::NodeRef(expr) => {
+                            out.extend(quote! { .node_ref(#expr) });
+                        }
                     }
                 }
                 out
@@ -348,6 +367,7 @@ impl ViewType {
             }
             ViewType::State {
                 kw,
+                quiet,
                 name,
                 typ,
                 init,
@@ -355,10 +375,21 @@ impl ViewType {
             } => {
                 let body = body.gen_rust();
                 let kw = Ident::new("try", kw.span);
-                quote! {
-                    {
-                        stringify!(#kw);
-                        ::lunar::stateful::<#typ, _, _, _>(move || #init, move |#name| #body)
+                let quiet = quiet.map(|v| Ident::new("try", v.span));
+                if let Some(quiet) = quiet {
+                    quote! {
+                        {
+                            stringify!(#kw);
+                            stringify!(#quiet);
+                            ::lunar::stateful_quiet::<#typ, _, _, _>(move || #init, move |#name| #body)
+                        }
+                    }
+                } else {
+                    quote! {
+                        {
+                            stringify!(#kw);
+                            ::lunar::stateful::<#typ, _, _, _>(move || #init, move |#name| #body)
+                        }
                     }
                 }
             }

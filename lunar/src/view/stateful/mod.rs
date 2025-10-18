@@ -7,7 +7,7 @@ use crate::{
     view::{View, ViewId, stateful::state::State},
 };
 
-pub struct Stateful<StateFn, InnerFn> {
+pub struct Stateful<StateFn, InnerFn, const QUIET: bool> {
     state_fn: StateFn,
     inner_fn: InnerFn,
 }
@@ -18,7 +18,7 @@ pub struct StatefulViewState<T: 'static, Inner: View> {
     inner_id: ViewId,
 }
 
-impl<StateFn, InnerFn, T, Inner> View for Stateful<StateFn, InnerFn>
+impl<StateFn, InnerFn, T, Inner, const QUIET: bool> View for Stateful<StateFn, InnerFn, QUIET>
 where
     T: 'static,
     StateFn: Fn() -> T,
@@ -44,6 +44,7 @@ where
         let state = State {
             state_id: id,
             app_id: ctx.app_id,
+            quiet: QUIET,
             _p: PhantomData,
         };
         let inner = (self.inner_fn)(state);
@@ -140,7 +141,22 @@ where
 pub fn stateful<T, Inner, StateFn, InnerFn>(
     init: StateFn,
     view: InnerFn,
-) -> Stateful<StateFn, InnerFn>
+) -> Stateful<StateFn, InnerFn, false>
+where
+    T: 'static,
+    StateFn: Fn() -> T,
+    InnerFn: Fn(State<T>) -> Inner,
+    Inner: View,
+{
+    Stateful {
+        state_fn: init,
+        inner_fn: view,
+    }
+}
+pub fn stateful_quiet<T, Inner, StateFn, InnerFn>(
+    init: StateFn,
+    view: InnerFn,
+) -> Stateful<StateFn, InnerFn, true>
 where
     T: 'static,
     StateFn: Fn() -> T,

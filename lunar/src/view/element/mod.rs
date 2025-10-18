@@ -132,11 +132,29 @@ where
 // doing this instead of the trait because rust was smelly
 macro_rules! impl_element_view {
     ($node:ident) => {
-        pub fn attr<Name, Value, const BUILD_ONLY: bool>(
+        pub fn attr<Name, Value>(
             self,
             name: Name,
             value: Value,
-        ) -> $crate::view::element::attr::Attr<$node, Name, Self, BUILD_ONLY>
+        ) -> $crate::view::element::attr::Attr<$node, Name, Self, false>
+        where
+            Name: AsRef<str>,
+            Value: godot::meta::ToGodot,
+            $node: godot::prelude::Inherits<godot::prelude::Node>,
+        {
+            use std::marker::PhantomData;
+            $crate::view::element::attr::Attr {
+                inner: self,
+                name,
+                value: value.to_variant(),
+                _p: PhantomData,
+            }
+        }
+        pub fn attr_build<Name, Value>(
+            self,
+            name: Name,
+            value: Value,
+        ) -> $crate::view::element::attr::Attr<$node, Name, Self, true>
         where
             Name: AsRef<str>,
             Value: godot::meta::ToGodot,

@@ -35,7 +35,7 @@ pub use view::{
     on_ready::{__LunarOnReadyNode, OnReady, on_ready},
     on_teardown::{OnTeardown, on_teardown},
     option::OptionViewState,
-    stateful::{Stateful, StatefulViewState, state::State, stateful},
+    stateful::{Stateful, StatefulViewState, state::State, stateful, stateful_quiet},
     when::{When, WhenViewState, when},
 };
 
