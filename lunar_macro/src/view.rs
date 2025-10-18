@@ -39,6 +39,7 @@ pub enum ViewType {
     },
     Expr(Expr),
     For {
+        kw: token::For,
         pattern: Pat,
         iter: Expr,
         key: Expr,
@@ -155,7 +156,7 @@ impl Parse for ViewType {
             let expr = inner.parse()?;
             Ok(ViewType::Expr(expr))
         } else if input.peek(Token![for]) {
-            input.parse::<Token![for]>()?;
+            let kw = input.parse::<Token![for]>()?;
             let pattern = Pat::parse_single(input)?;
             input.parse::<Token![in]>()?;
             let iter = input.parse()?;
@@ -166,6 +167,7 @@ impl Parse for ViewType {
             let body = inner.parse()?;
 
             Ok(ViewType::For {
+                kw,
                 pattern,
                 iter,
                 key,
@@ -365,13 +367,19 @@ impl ViewType {
             }
             ViewType::Expr(expr) => quote! { #expr },
             ViewType::For {
+                kw,
                 pattern,
                 iter,
                 key,
                 body,
             } => {
                 let body = body.gen_rust();
-                quote! { (#iter).into_iter().map(|#pattern| (#key, #body) ).collect::<Vec<_>>() }
+                quote! {
+                    {
+                        #kw _ in [()] {};
+                        (#iter).into_iter().map(|#pattern| (#key, #body)).collect::<Vec<_>>()
+                    }
+                }
             }
             ViewType::If(if_view) => if_view.gen_rust(),
             ViewType::Dyn(view_body) => {
@@ -408,7 +416,7 @@ impl ViewType {
             }
             ViewType::When { kw, expr, body } => {
                 let body = body.gen_rust();
-                let kw = Ident::new("try", kw.span);
+                let kw = Ident::new("yield", kw.span);
                 quote! {
                     {
                         stringify!(#kw);
@@ -418,7 +426,7 @@ impl ViewType {
             }
             ViewType::Memo { kw, expr, body } => {
                 let body = body.gen_rust();
-                let kw = Ident::new("try", kw.span);
+                let kw = Ident::new("yield", kw.span);
                 quote! {
                     {
                         stringify!(#kw);
