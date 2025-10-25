@@ -3,7 +3,7 @@ use std::{marker::PhantomData, rc::Rc};
 use godot::global::godot_print;
 
 use crate::{
-    system::{APP_NOTIFICATIONS, APPS, AppId, STATES, StateId},
+    system::{AppId, StateId, APPS, APP_NOTIFICATIONS, STATES},
     view::AnchorType,
 };
 
@@ -31,7 +31,6 @@ impl<T> State<T> {
     }
     pub fn is_valid(&self) -> bool {
         STATES.with_borrow(|states| states.contains_key(self.state_id))
-            && APP_NOTIFICATIONS.with_borrow_mut(|map| map.contains_key(self.app_id))
     }
     pub fn get(&self) -> T
     where
