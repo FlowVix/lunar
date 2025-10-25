@@ -29,6 +29,10 @@ impl<T> State<T> {
         APP_NOTIFICATIONS
             .with_borrow_mut(|map| map.entry(self.app_id).unwrap().or_default().push(path));
     }
+    pub fn is_valid(&self) -> bool {
+        STATES.with_borrow(|states| states.contains_key(self.state_id))
+            && APP_NOTIFICATIONS.with_borrow_mut(|map| map.contains_key(self.app_id))
+    }
     pub fn get(&self) -> T
     where
         T: Copy,
