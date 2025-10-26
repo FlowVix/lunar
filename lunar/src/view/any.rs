@@ -1,4 +1,7 @@
-use std::any::Any;
+use std::{
+    any::Any,
+    cell::{Cell, RefCell},
+};
 
 use godot::{
     classes::Node,
@@ -68,7 +71,13 @@ where
         anchor_type: AnchorType,
     ) -> AnyViewState {
         let mut any_anchor = Node::new_alloc();
-        any_anchor.set_name("__ANY_ANCHOR");
+        thread_local! {
+            static NAME_COUNTER: Cell<usize> = const { Cell::new(0) };
+        }
+        any_anchor.set_name(&format!(
+            "__ANY_ANCHOR_{}",
+            NAME_COUNTER.replace(NAME_COUNTER.get() + 1)
+        ));
         anchor_type.add(anchor, &any_anchor);
         let inner_id = ctx.new_structural_id();
 

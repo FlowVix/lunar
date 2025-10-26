@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use godot::{
     classes::Node,
     obj::{Gd, NewAlloc},
@@ -26,7 +28,13 @@ where
         anchor_type: AnchorType,
     ) -> Self::ViewState {
         let mut opt_anchor = Node::new_alloc();
-        opt_anchor.set_name("__OPTION_ANCHOR");
+        thread_local! {
+            static NAME_COUNTER: Cell<usize> = const { Cell::new(0) };
+        }
+        opt_anchor.set_name(&format!(
+            "__OPTION_ANCHOR_{}",
+            NAME_COUNTER.replace(NAME_COUNTER.get() + 1)
+        ));
         anchor_type.add(anchor, &opt_anchor);
         OptionViewState {
             anchor: opt_anchor.clone(),

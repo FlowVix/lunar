@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use either::Either::{self, Left, Right};
 use godot::{
     classes::Node,
@@ -26,7 +28,13 @@ where
         anchor_type: AnchorType,
     ) -> Self::ViewState {
         let mut eit_anchor = Node::new_alloc();
-        eit_anchor.set_name("__EITHER_ANCHOR");
+        thread_local! {
+            static NAME_COUNTER: Cell<usize> = const { Cell::new(0) };
+        }
+        eit_anchor.set_name(&format!(
+            "__EITHER_ANCHOR_{}",
+            NAME_COUNTER.replace(NAME_COUNTER.get() + 1)
+        ));
         anchor_type.add(anchor, &eit_anchor);
         let inner_id = ctx.new_structural_id();
         EitherViewState {

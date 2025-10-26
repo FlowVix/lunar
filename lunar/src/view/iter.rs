@@ -2,7 +2,7 @@ use godot::{
     classes::Node,
     obj::{Gd, NewAlloc},
 };
-use std::{collections::HashMap, hash::Hash};
+use std::{cell::Cell, collections::HashMap, hash::Hash};
 
 use crate::{AnchorType, View, ViewId, util::hash};
 
@@ -25,7 +25,13 @@ where
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
         let mut vec_anchor = Node::new_alloc();
-        vec_anchor.set_name("__VEC_ANCHOR");
+        thread_local! {
+            static NAME_COUNTER: Cell<usize> = const { Cell::new(0) };
+        }
+        vec_anchor.set_name(&format!(
+            "__VEC_ANCHOR_{}",
+            NAME_COUNTER.replace(NAME_COUNTER.get() + 1)
+        ));
         anchor_type.add(anchor, &vec_anchor);
         VecViewState {
             anchor: vec_anchor.clone(),

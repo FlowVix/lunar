@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use godot::{
     classes::Node,
     obj::{Gd, NewAlloc},
@@ -31,7 +33,13 @@ where
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
         let mut when_anchor = Node::new_alloc();
-        when_anchor.set_name("__WHEN_ANCHOR");
+        thread_local! {
+            static NAME_COUNTER: Cell<usize> = const { Cell::new(0) };
+        }
+        when_anchor.set_name(&format!(
+            "__WHEN_ANCHOR_{}",
+            NAME_COUNTER.replace(NAME_COUNTER.get() + 1)
+        ));
         anchor_type.add(anchor, &when_anchor);
 
         let inner = (self.inner_fn)();
