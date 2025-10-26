@@ -85,6 +85,10 @@ where
                 ctx.with_id(ViewId::Key(hash(k)), |ctx| {
                     v.rebuild(prev, &mut inner, ctx, &mut vec_anchor, AnchorType::Before);
                 });
+                let mut new_nodes = vec![];
+                v.collect_nodes(&inner, &mut new_nodes);
+                move_idx =
+                    (move_idx as isize + new_nodes.len() as isize - nodes.len() as isize) as usize;
                 state.inner.push(inner);
             } else {
                 let inner = ctx.with_id(ViewId::Key(hash(k)), |ctx| {
