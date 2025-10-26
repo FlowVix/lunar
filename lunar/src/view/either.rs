@@ -26,6 +26,7 @@ where
         anchor_type: AnchorType,
     ) -> Self::ViewState {
         let mut eit_anchor = Node::new_alloc();
+        eit_anchor.set_name("__EITHER_ANCHOR");
         anchor_type.add(anchor, &eit_anchor);
         let inner_id = ctx.new_structural_id();
         EitherViewState {

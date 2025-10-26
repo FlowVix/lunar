@@ -26,6 +26,7 @@ where
         anchor_type: AnchorType,
     ) -> Self::ViewState {
         let mut opt_anchor = Node::new_alloc();
+        opt_anchor.set_name("__OPTION_ANCHOR");
         anchor_type.add(anchor, &opt_anchor);
         OptionViewState {
             anchor: opt_anchor.clone(),

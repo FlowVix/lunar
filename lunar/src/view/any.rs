@@ -68,6 +68,7 @@ where
         anchor_type: AnchorType,
     ) -> AnyViewState {
         let mut any_anchor = Node::new_alloc();
+        any_anchor.set_name("__ANY_ANCHOR");
         anchor_type.add(anchor, &any_anchor);
         let inner_id = ctx.new_structural_id();
 

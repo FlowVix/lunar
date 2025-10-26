@@ -31,6 +31,7 @@ where
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
         let mut when_anchor = Node::new_alloc();
+        when_anchor.set_name("__WHEN_ANCHOR");
         anchor_type.add(anchor, &when_anchor);
 
         let inner = (self.inner_fn)();

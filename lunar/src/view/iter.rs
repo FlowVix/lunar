@@ -25,6 +25,7 @@ where
         anchor_type: super::AnchorType,
     ) -> Self::ViewState {
         let mut vec_anchor = Node::new_alloc();
+        vec_anchor.set_name("__VEC_ANCHOR");
         anchor_type.add(anchor, &vec_anchor);
         VecViewState {
             anchor: vec_anchor.clone(),
