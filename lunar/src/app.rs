@@ -20,10 +20,11 @@ pub fn start<N, V, F>(root: Gd<N>, f: F) -> App
 where
     N: Inherits<Node>,
     V: View + 'static,
-    F: FnOnce() -> V,
+    F: FnOnce(Gd<N>) -> V,
 {
+    let prev_root = root.clone();
     let mut root = root.upcast::<Node>();
-    let view = Box::new(f()) as Box<dyn AnyView>;
+    let view = Box::new(f(prev_root)) as Box<dyn AnyView>;
 
     let id = APPS.with_borrow_mut(|apps| {
         apps.insert_with_key(|id| {
