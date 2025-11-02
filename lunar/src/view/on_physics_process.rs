@@ -56,6 +56,7 @@ where
         anchor: &mut godot::prelude::Node,
         anchor_type: super::AnchorType,
     ) {
+        state.bind_mut().cb = self.cb.clone();
     }
 
     fn teardown(
