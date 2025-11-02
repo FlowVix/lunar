@@ -14,7 +14,7 @@ pub mod option;
 pub mod stateful;
 pub mod when;
 
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc};
 
 use godot::{classes::Node, obj::Gd};
 
@@ -188,6 +188,59 @@ where
 
     fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
         (*self).collect_nodes(state, nodes);
+    }
+}
+
+impl<Inner> View for Rc<Inner>
+where
+    Inner: View + ?Sized,
+{
+    type ViewState = Inner::ViewState;
+
+    fn build(
+        &self,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) -> Self::ViewState {
+        self.deref().build(ctx, anchor, anchor_type)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        self.deref().rebuild(prev, state, ctx, anchor, anchor_type);
+    }
+
+    fn teardown(
+        &self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        self.deref().teardown(state, ctx, anchor, anchor_type);
+    }
+
+    fn notify_state(
+        &self,
+        path: &[ViewId],
+        state: &mut Self::ViewState,
+        ctx: &mut crate::ctx::Context,
+        anchor: &mut godot::prelude::Node,
+        anchor_type: AnchorType,
+    ) {
+        self.deref()
+            .notify_state(path, state, ctx, anchor, anchor_type);
+    }
+
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        self.deref().collect_nodes(state, nodes);
     }
 }
 
