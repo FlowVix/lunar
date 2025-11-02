@@ -139,6 +139,58 @@ where
     }
 }
 
+impl<Inner> View for &Inner
+where
+    Inner: View + ?Sized,
+{
+    type ViewState = Inner::ViewState;
+
+    fn build(
+        &self,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) -> Self::ViewState {
+        (*self).build(ctx, anchor, anchor_type)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        (*self).rebuild(prev, state, ctx, anchor, anchor_type);
+    }
+
+    fn teardown(
+        &self,
+        state: &mut Self::ViewState,
+        ctx: &mut Context,
+        anchor: &mut Node,
+        anchor_type: AnchorType,
+    ) {
+        (*self).teardown(state, ctx, anchor, anchor_type);
+    }
+
+    fn notify_state(
+        &self,
+        path: &[ViewId],
+        state: &mut Self::ViewState,
+        ctx: &mut crate::ctx::Context,
+        anchor: &mut godot::prelude::Node,
+        anchor_type: AnchorType,
+    ) {
+        (*self).notify_state(path, state, ctx, anchor, anchor_type);
+    }
+
+    fn collect_nodes(&self, state: &Self::ViewState, nodes: &mut Vec<Gd<Node>>) {
+        (*self).collect_nodes(state, nodes);
+    }
+}
+
 macro_rules! tuple_impl {
     ($($v:literal)*) => {
         paste::paste! {
