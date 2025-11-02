@@ -11,7 +11,6 @@ mod kw {
     syn::custom_keyword!(when);
     syn::custom_keyword!(state);
     syn::custom_keyword!(quiet);
-    syn::custom_keyword!(clone);
     syn::custom_keyword!(build);
     syn::custom_keyword!(memo);
 }
@@ -51,7 +50,6 @@ pub enum ViewType {
     State {
         kw: kw::state,
         quiet: Option<kw::quiet>,
-        clone: Option<(kw::clone, Punctuated<Ident, Token![,]>)>,
         name: Ident,
         typ: Type,
         init: Expr,
@@ -190,15 +188,6 @@ impl Parse for ViewType {
             } else {
                 None
             };
-            let clone = if input.peek(kw::clone) {
-                let kw = input.parse::<kw::clone>()?;
-                let inner;
-                parenthesized!(inner in input);
-                let vars = Punctuated::parse_terminated(&inner)?;
-                Some((kw, vars))
-            } else {
-                None
-            };
             let name = input.parse()?;
             let typ = if input.peek(Token![:]) {
                 input.parse::<Token![:]>()?;
@@ -213,7 +202,6 @@ impl Parse for ViewType {
             Ok(ViewType::State {
                 kw,
                 quiet,
-                clone,
                 name,
                 typ,
                 init,
@@ -401,7 +389,6 @@ impl ViewType {
             ViewType::State {
                 kw,
                 quiet,
-                clone,
                 name,
                 typ,
                 init,
@@ -410,35 +397,19 @@ impl ViewType {
                 let body = body.gen_rust();
                 let kw = Ident::new("try", kw.span);
                 let quiet = quiet.map(|v| Ident::new("try", v.span));
-                let (clone_kw, clone_args) = clone
-                    .as_ref()
-                    .map(|(kw, vars)| {
-                        let vars = vars.iter();
-                        (
-                            Ident::new("try", kw.span),
-                            quote! {
-                                #(let #vars = #vars.clone();)*
-                            },
-                        )
-                    })
-                    .unzip();
-                let clone_kw = clone_kw.iter();
-                let clone_args = clone_args.iter();
                 if let Some(quiet) = quiet {
                     quote! {
                         {
                             stringify!(#kw);
                             stringify!(#quiet);
-                            #(stringify!(#clone_kw);)*
-                            ::lunar::stateful_quiet::<#typ, _, _, _>(move || #init, { #(#clone_args)* move |#name| #body })
+                            ::lunar::stateful_quiet::<#typ, _, _, _>(move || #init, move |#name| #body)
                         }
                     }
                 } else {
                     quote! {
                         {
                             stringify!(#kw);
-                            #(stringify!(#clone_kw);)*
-                            ::lunar::stateful::<#typ, _, _, _>(move || #init, { #(#clone_args)* move |#name| #body })
+                            ::lunar::stateful::<#typ, _, _, _>(move || #init, move |#name| #body)
                         }
                     }
                 }
