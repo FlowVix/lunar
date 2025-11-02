@@ -7,6 +7,8 @@ mod system;
 mod util;
 mod view;
 
+use std::rc::Rc;
+
 pub use app::{App, start};
 pub use ctx::Context;
 pub use either;

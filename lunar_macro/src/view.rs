@@ -384,7 +384,7 @@ impl ViewType {
             ViewType::If(if_view) => if_view.gen_rust(),
             ViewType::Dyn(view_body) => {
                 let body = view_body.gen_rust();
-                quote! { ( Box::new(#body) as Box<dyn ::lunar::AnyView> ) }
+                quote! { { #[allow(clippy::double_parens)] ( Box::new(#body) as Box<dyn ::lunar::AnyView> ) } }
             }
             ViewType::State {
                 kw,
