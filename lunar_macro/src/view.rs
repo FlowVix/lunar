@@ -377,7 +377,7 @@ impl ViewType {
                 quote! {
                     {
                         #kw _ in [()] {};
-                        (#iter).into_iter().map(|#pattern| (#key, #body)).collect::<Vec<_>>()
+                        (#iter).into_iter().map(move |#pattern| (#key, #body)).collect::<Vec<_>>()
                     }
                 }
             }
