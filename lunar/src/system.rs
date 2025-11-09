@@ -1,4 +1,4 @@
-use std::{any::Any, cell::RefCell, rc::Rc};
+use std::{any::Any, cell::RefCell, mem::ManuallyDrop, rc::Rc};
 
 use godot::{classes::Node, obj::Gd};
 use slotmap::{SecondaryMap, SlotMap, new_key_type};
@@ -34,7 +34,7 @@ pub struct System {
 }
 
 thread_local! {
-    pub static STATES: RefCell<SlotMap<StateId, StateData>> = RefCell::new(SlotMap::default());
-    pub static APPS: RefCell<SlotMap<AppId, AppData>> = RefCell::new(SlotMap::default());
-    pub static APP_NOTIFICATIONS: RefCell<SecondaryMap<AppId, Vec<Rc<[ViewId]>>>> = RefCell::new(SecondaryMap::new());
+    pub static STATES: RefCell<ManuallyDrop<SlotMap<StateId, StateData>>> = RefCell::new(ManuallyDrop::new(SlotMap::default()));
+    pub static APPS: RefCell<ManuallyDrop<SlotMap<AppId, AppData>>> = RefCell::new(ManuallyDrop::new(SlotMap::default()));
+    pub static APP_NOTIFICATIONS: RefCell<ManuallyDrop<SecondaryMap<AppId, Vec<Rc<[ViewId]>>>>> = RefCell::new(ManuallyDrop::new(SecondaryMap::new()));
 }
