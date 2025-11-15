@@ -4,7 +4,7 @@ resolver = "3"
 
 
 [workspace.dependencies]
-godot = "0.4.1"
+godot = "0.4.2"
 syn = "2.0.106"
 quote = "1.0.40"
 proc-macro2 = "1.0.101"
