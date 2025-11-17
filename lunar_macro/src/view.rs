@@ -7,6 +7,8 @@ use syn::{
     parenthesized, parse::Parse, parse_quote, punctuated::Punctuated, token,
 };
 
+use crate::util::take_until_semicolon;
+
 mod kw {
     syn::custom_keyword!(when);
     syn::custom_keyword!(state);
@@ -52,7 +54,7 @@ pub enum ViewType {
         quiet: Option<kw::quiet>,
         name: Ident,
         typ: Type,
-        init: Expr,
+        init: TokenStream,
         body: ViewBody,
     },
     When {
@@ -68,7 +70,7 @@ pub enum ViewType {
     Let {
         pat: Pat,
         typ: Type,
-        value: Expr,
+        value: TokenStream,
         body: ViewBody,
     },
 }
@@ -196,8 +198,7 @@ impl Parse for ViewType {
                 parse_quote! { _ }
             };
             input.parse::<Token![=]>()?;
-            let init = input.parse()?;
-            input.parse::<Token![;]>()?;
+            let init = take_until_semicolon(input)?;
             let body = input.parse()?;
             Ok(ViewType::State {
                 kw,
@@ -217,8 +218,7 @@ impl Parse for ViewType {
                 parse_quote! { _ }
             };
             input.parse::<Token![=]>()?;
-            let value = input.parse()?;
-            input.parse::<Token![;]>()?;
+            let value = take_until_semicolon(input)?;
             let body = input.parse()?;
             Ok(ViewType::Let {
                 pat,
