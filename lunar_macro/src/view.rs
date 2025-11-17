@@ -36,10 +36,10 @@ pub enum ViewType {
     },
     Component {
         name: Ident,
-        args: Punctuated<Expr, Token![,]>,
+        args: TokenStream,
         children: Option<ViewBody>,
     },
-    Expr(Expr),
+    Expr(TokenStream),
     For {
         kw: token::For,
         pattern: Pat,
@@ -246,7 +246,7 @@ impl Parse for ViewType {
             if input.peek(token::Paren) {
                 let inner;
                 parenthesized!(inner in input);
-                let args = Punctuated::parse_terminated(&inner)?;
+                let args = inner.parse()?;
                 let children = if input.peek(token::Brace) {
                     let inner;
                     braced!(inner in input);
