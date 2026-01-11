@@ -42,7 +42,3 @@ pub use view::{
     stateful::{Stateful, StatefulViewState, state::State, stateful, stateful_quiet},
     when::{When, WhenViewState, when},
 };
-
-// fn goy() -> impl View {
-//     state(0, |count| )
-// }

@@ -28,11 +28,6 @@ pub struct AppData {
     pub root: Gd<Node>,
 }
 
-pub struct System {
-    pub states: SlotMap<StateId, StateData>,
-    pub apps: SlotMap<AppId, AppData>,
-}
-
 thread_local! {
     pub static STATES: RefCell<ManuallyDrop<SlotMap<StateId, StateData>>> = RefCell::new(ManuallyDrop::new(SlotMap::default()));
     pub static APPS: RefCell<ManuallyDrop<SlotMap<AppId, AppData>>> = RefCell::new(ManuallyDrop::new(SlotMap::default()));

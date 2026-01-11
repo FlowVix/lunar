@@ -1,12 +1,13 @@
 use std::rc::Rc;
 
-use lunar::view;
+use godot::classes::Button;
+use lunar::{View, view};
 
 fn main() {
     view! {
-        let bob: i32 = 6 * {
-            3;
-            4 + 8
-        } + 9;
+        state a = 3;
+        state b = 3;
+
+        Button
     };
 }
